@@ -1,5 +1,7 @@
 from collections import UserDict
-from errors import PhoneFormatError
+from datetime import datetime, date, timedelta
+from enum import Enum
+from errors import PhoneFormatError, BirthdayFormatError
 
 
 class Field:
@@ -28,11 +30,19 @@ class Phone(Field):
             raise PhoneFormatError("The phone number must contain only digits")
 
 
+class Birthday(Field):
+    def __init__(self, value):
+        try:
+            self.value = datetime.strptime(value, "%d.%m.%Y").date()
+        except ValueError:
+            raise BirthdayFormatError()
+
 
 class Record:
     def __init__(self, name):
         self.name = Name(name)
         self.phones: list[Phone] = []
+        self.birthday: Birthday = None
     
     def add_phone(self, phone: str):
         self.phones.append(Phone(phone))
@@ -55,8 +65,21 @@ class Record:
         index = self.phones.index(phone)
         self.phones[index] = Phone(new_phone)
 
+    def add_birthday(self, birthday: str):
+        self.birthday = Birthday(birthday)
+
     def __str__(self):
         return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+
+
+class Day(Enum):
+    MONDAY = 0
+    TUESDAY = 1
+    WEDNESDAY = 2
+    THURSDAY = 3
+    FRIDAY = 4
+    SATURDAY = 5
+    SUNDAY = 6
 
 
 class AddressBook(UserDict):
@@ -68,43 +91,81 @@ class AddressBook(UserDict):
 
     def find(self, name: str):
         return self.data.get(name)
+    
+    @staticmethod
+    def date_to_string(date):
+        return date.strftime("%d.%m.%Y")
+    
+    @staticmethod
+    def find_next_weekday(start_date, weekday):
+        days_ahead = weekday - start_date.weekday()
+        if days_ahead <= 0:
+            days_ahead += 7
+        return start_date + timedelta(days=days_ahead)
+
+    @staticmethod
+    def adjust_for_weekend(birthday):
+        if birthday.weekday() >= Day.SATURDAY.value:
+            return AddressBook.find_next_weekday(birthday, Day.MONDAY.value)
+        return birthday
+    
+    def get_upcoming_birthdays(self, days=7):
+        upcoming_birthdays = []
+        today = date.today()
+
+        for contact in self.data.values():
+
+            birthday = contact.birthday.value
+
+            if not birthday:
+                continue
+
+            next_birthday = birthday.replace(year=today.year)
+
+            if next_birthday < today:
+                next_birthday = next_birthday.replace(year=today.year+1)
+
+            if 0 <= (next_birthday - today).days <= days:
+
+                next_birthday = self.adjust_for_weekend(next_birthday)
+
+                congratulation_date_str = self.date_to_string(next_birthday)
+                upcoming_birthdays.append({"name": contact.name.value, "birthday": congratulation_date_str})
+
+        return upcoming_birthdays
 
     def __str__(self):
         return "\n".join(str(record) for record in self.data.values())
     
 
 def main():
-    # Створення нової адресної книги
-    book = AddressBook()
+    address_book = AddressBook()
 
-    # Створення запису для John
-    john_record = Record("John")
-    john_record.add_phone("1234567890")
-    john_record.add_phone("5555555555")
+    # Додаємо контакти з днями народження
+    record1 = Record("Alice")
+    record1.add_birthday("30.11.2003")
+    address_book.add_record(record1)
 
-    # Додавання запису John до адресної книги
-    book.add_record(john_record)
+    record2 = Record("Bob")
+    record2.add_birthday("03.12.1995")
+    address_book.add_record(record2)
 
-    # Створення та додавання нового запису для Jane
-    jane_record = Record("Jane")
-    jane_record.add_phone("9876543210")
-    book.add_record(jane_record)
+    record3 = Record("Charlie")
+    record3.add_birthday("08.12.2000")
+    address_book.add_record(record3)
 
-    # Виведення всіх записів у книзі
-    print(book)
+    record4 = Record("Diana")
+    record4.add_birthday("29.11.1990")
+    address_book.add_record(record4)
 
-    # Знаходження та редагування телефону для John
-    john = book.find("John")
-    john.edit_phone("1234567890", "1112223333")
+    record5 = Record("Eve")
+    record5.add_birthday("07.12.1988")
+    address_book.add_record(record5)
 
-    print(john)  # Виведення: Contact name: John, phones: 1112223333; 5555555555
-
-    # Пошук конкретного телефону у записі John
-    found_phone = john.find_phone("5555555555")
-    print(f"{john.name}: {found_phone}")  # Виведення: John: 5555555555
-
-    # Видалення запису Jane
-    book.delete("Jane")
+    
+    # Викликаємо метод з параметром 7 днів
+    upcoming_birthdays = address_book.get_upcoming_birthdays(days=7)
+    print(upcoming_birthdays)
 
 
 if __name__ == "__main__":
