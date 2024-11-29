@@ -1,7 +1,7 @@
 from collections import UserDict
 from datetime import datetime, date, timedelta
 from enum import Enum
-from errors import PhoneFormatError, BirthdayFormatError
+from errors import PhoneFormatError, BirthdayFormatError, PhoneError
 
 
 class Field:
@@ -60,7 +60,7 @@ class Record:
         
         phone = self.find_phone(old_phone)
         if not phone:
-            raise ValueError
+            raise PhoneError(self.name.value, old_phone)
         
         index = self.phones.index(phone)
         self.phones[index] = Phone(new_phone)
@@ -89,7 +89,7 @@ class AddressBook(UserDict):
     def delete(self, name: str):
         del self.data[name]
 
-    def find(self, name: str):
+    def find(self, name: str) -> Record:
         return self.data.get(name)
     
     @staticmethod
