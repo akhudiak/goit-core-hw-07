@@ -1,11 +1,12 @@
 from functools import wraps
+from data_structure import AddressBook
 
 
 def input_error(func):
     @wraps(func)
-    def inner(args, contacts):
+    def inner(args, book):
         try:
-            return func(args, contacts)
+            return func(args, book)
         except ValueError:
             return "Give me name and phone please"
         except IndexError:
@@ -23,33 +24,33 @@ def parse_input(user_input: str):
 
 
 @input_error
-def add_contact(args, contacts):
+def add_contact(args, book):
     name, phone = args
-    contacts[name] = phone
+    book[name] = phone
     return "Contact added"
 
 
 @input_error
-def change_contact(args, contacts):
+def change_contact(args, book):
     name, phone = args
-    if name not in contacts:
+    if name not in book:
         raise KeyError
-    contacts[name] = phone
+    book[name] = phone
     return "Contact updated"
     
 
 @input_error
-def show_phone(args, contacts):
+def show_phone(args, book):
     name = args[0]
-    return contacts[name]
-    
+    return book[name]
 
-def show_all(args, contacts):
-    return ";\n".join([f"{name}: {phone}" for name, phone in contacts.items()])
+
+def show_all(args, book):
+    return ";\n".join([f"{name}: {phone}" for name, phone in book.items()])
 
 
 def main():
-    contacts = {}
+    book = AddressBook()
     print("Welcome to the assistant bot!")
     while True:
         user_input = input(">>> ")
@@ -61,13 +62,13 @@ def main():
         elif command == "hello":
             print("How can I help you?")
         elif command == "add":
-            print(add_contact(args, contacts))
+            print(add_contact(args, book))
         elif command == "change":
-            print(change_contact(args, contacts))
+            print(change_contact(args, book))
         elif command == "phone":
-            print(show_phone(args, contacts))
+            print(show_phone(args, book))
         elif command == "all":
-            print(show_all(args, contacts))
+            print(show_all(args, book))
         else:
             print("Invalid command.")
 
