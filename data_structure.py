@@ -32,8 +32,12 @@ class Phone(Field):
 
 class Birthday(Field):
     def __init__(self, value):
+        self.__check_format(value)
+        super().__init__(value)
+
+    def __check_format(self, value: str):
         try:
-            self.value = datetime.strptime(value, "%d.%m.%Y").date()
+            datetime.strptime(value, "%d.%m.%Y")
         except ValueError:
             raise BirthdayFormatError()
 
@@ -69,7 +73,10 @@ class Record:
         self.birthday = Birthday(birthday)
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
+        if self.birthday:
+            return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday.value}"
+        else:
+            return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
 
 
 class Day(Enum):
@@ -93,18 +100,18 @@ class AddressBook(UserDict):
         return self.data.get(name)
     
     @staticmethod
-    def date_to_string(date):
+    def date_to_string(date: date):
         return date.strftime("%d.%m.%Y")
     
     @staticmethod
-    def find_next_weekday(start_date, weekday):
+    def find_next_weekday(start_date: date, weekday):
         days_ahead = weekday - start_date.weekday()
         if days_ahead <= 0:
             days_ahead += 7
         return start_date + timedelta(days=days_ahead)
 
     @staticmethod
-    def adjust_for_weekend(birthday):
+    def adjust_for_weekend(birthday: date):
         if birthday.weekday() >= Day.SATURDAY.value:
             return AddressBook.find_next_weekday(birthday, Day.MONDAY.value)
         return birthday
@@ -115,10 +122,10 @@ class AddressBook(UserDict):
 
         for contact in self.data.values():
 
-            birthday = contact.birthday.value
-
-            if not birthday:
+            if not contact.birthday:
                 continue
+            
+            birthday = datetime.strptime(contact.birthday.value, "%d.%m.%Y").date()
 
             next_birthday = birthday.replace(year=today.year)
 
