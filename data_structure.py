@@ -164,9 +164,8 @@ def main():
 
     
     # Викликаємо метод з параметром 7 днів
-    upcoming_birthdays = address_book.get_upcoming_birthdays(days=7)
+    upcoming_birthdays = "\n".join(f'{birthday["name"]}: {birthday["birthday"]}' for birthday in address_book.get_upcoming_birthdays(days=7))
     print(upcoming_birthdays)
-
 
 if __name__ == "__main__":
     main()

@@ -37,12 +37,14 @@ def add_contact(args, book: AddressBook):
 
     if record:
         record.add_phone(phone)
+        message = "Contact updated"
     else:
         record = Record(name)
         record.add_phone(phone)
         book.add_record(record)
+        message = "Contact added"
 
-    return "Contact added"
+    return message
 
 
 @input_error
@@ -61,7 +63,7 @@ def change_phone(args, book: AddressBook):
     
 
 @input_error
-def show_phone(args, book):
+def show_phone(args, book: AddressBook):
     try:
         name = args[0]
     except IndexError:
@@ -74,21 +76,44 @@ def show_phone(args, book):
     return str(record)
 
 
+@input_error
 def show_all(args, book):
     return str(book)
 
 
 @input_error
-def add_birthday(args, book):
-    ...
+def add_birthday(args, book: AddressBook):
+    try:
+        name, birthday = args
+    except ValueError:
+        raise InputFormatError("User format 'add-birthday [name] [birthday]'")
+    
+    record = book.find(name)
+    if not record:
+        raise NameError(name)
+    
+    record.add_birthday(birthday)
+    
+    return "Birthday added"
+
 
 @input_error
-def show_birthday(args, book):
-    ...
+def show_birthday(args, book: AddressBook):
+    try:
+        name = args[0]
+    except IndexError:
+        raise InputFormatError("Use format 'show-birthday [name]'")
+    
+    record = book.find(name)
+    if not record:
+        raise NameError(name)
+    
+    return record.birthday.value
+
 
 @input_error
-def birthdays(args, book):
-    ...
+def birthdays(args, book: AddressBook):
+    return "\n".join(f'{u_b["name"]}: {u_b["birthday"]}' for u_b in book.get_upcoming_birthdays(days=7))
 
 
 def main():
@@ -111,6 +136,12 @@ def main():
             print(show_phone(args, book))
         elif command == "all":
             print(show_all(args, book))
+        elif command == "add-birthday":
+            print(add_birthday(args, book))
+        elif command == "show-birthday":
+            print(show_birthday(args, book))
+        elif command == "birthdays":
+            print(birthdays(args, book))
         else:
             print("Invalid command.")
 
